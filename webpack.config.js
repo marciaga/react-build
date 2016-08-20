@@ -1,19 +1,24 @@
 'use strict';
 const path = require('path');
 const webpack = require('webpack');
+const merge = require('webpack-merge');
+const CleanWebpackPlugin = require('clean-webpack-plugin');
 const LIFECYCLE_EVENT = process.env.npm_lifecycle_event;
-const plugins = [
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+var plugins = [
   new webpack.HotModuleReplacementPlugin(),
   new webpack.NoErrorsPlugin(),
-  new webpack.DefinePlugin({
-    'process.env.NODE_ENV': JSON.stringify('development'),
-    __DEV__: JSON.stringify(JSON.parse(process.env.DEBUG || 'false'))
+  new ExtractTextPlugin('[name].css'),
+  new CleanWebpackPlugin(['build'], {
+   'exclude': ['index.html'],
+   root: process.cwd()
   })
 ];
 
-let common = {
+var common = {
     env: process.env.NODE_ENV,
     entry: {
+        style: path.join(__dirname, 'app', 'main.css'),
         app: path.join(__dirname, 'app')
     },
     resolve: {
@@ -21,7 +26,7 @@ let common = {
     },
     output: {
         path: path.join(__dirname, 'build'),
-        filename: 'main.js',
+        filename: '[name].js',
     },
     module: {
         loaders: [
@@ -29,22 +34,48 @@ let common = {
                 test:    /\.jsx?$/,
                 exclude: /node_modules/,
                 loaders: ['react-hot', 'babel']
-            }
+            },
+            {
+                test: /\.css$/,
+                loader: ExtractTextPlugin.extract('style', 'css'),
+                exclude: /node_modules/
+            },
         ]
     }
-}
+};
+
+var config;
 
 if (LIFECYCLE_EVENT === 'start' || !LIFECYCLE_EVENT) {
-    common.plugins = plugins;
-    common.devtool = 'cheap-eval-source-map';
-    common.devServer = {
-        contentBase: path.join(__dirname, 'build'),
-        progress: true,
-        hot: true,
-        inline: true,
-        host: '127.0.0.1',
-        port: 8080
-    };
+    config = merge(
+        common, {
+        plugins: plugins,
+        devtool: 'source-map',
+        devServer: {
+            contentBase: path.join(__dirname, 'build'),
+            progress: true,
+            hot: true,
+            stats: 'errors-only',
+            inline: true,
+            host: '127.0.0.1',
+            port: 8080
+        }
+    });
+} else {
+    plugins.push(
+        new webpack.optimize.UglifyJsPlugin({
+            compress: {
+                warnings: false
+            }
+        }),
+        new webpack.DefinePlugin({
+            'process.env.NODE_ENV': 'production',
+        })
+    );
+
+    config = merge(common, {
+        plugins: plugins
+    });
 }
 
-module.exports = common;
+module.exports = config;
