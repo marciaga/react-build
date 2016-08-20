@@ -37,6 +37,7 @@
     "webpack-merge": "^0.14.1"
   },
   "dependencies": {
+    "extract-text-webpack-plugin": "^1.0.1",
     "react": "^15.1.0",
     "react-dom": "^15.1.0"
   }
