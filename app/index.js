@@ -3,7 +3,7 @@ import { render } from 'react-dom';
 
 render(
     <div>
-        <h1>Hello World</h1>
+        <h1>DERP</h1>
     </div>,
     document.getElementById('app')
 );
